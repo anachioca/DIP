@@ -1,5 +1,4 @@
 import numpy as np
-import matplotlib.pyplot as plt
 import imageio
 from scipy.fftpack import fftn, ifftn, fftshift
 
@@ -24,6 +23,8 @@ sigma = float(input())
 gamma = float(input())
 
 f = gaussian_filter(k, sigma)  # filter
+max_value = np.amax(img)
+min_value = np.amin(img)
 
 'padding the filter so that it has the same size of the image'
 pad1 = (img.shape[0]//2)-f.shape[0]//2
@@ -33,14 +34,17 @@ fp = np.pad(f, (pad1, pad1-1), "constant",  constant_values=0)
 f_fft = fftn(fp)  # Fourrier transform of the filter
 img_fft = fftn(img)  # Fourrier transform of the image
 
-max_value = np.amax(img_fft)
-
 'Filtered image in the Fourier domain'
 filtered_img = np.multiply(f_fft, img_fft)
 
+'Converting back to the space domain'
+filtered_img_ifft = np.real(fftshift(ifftn(filtered_img)))
+max = np.amax(filtered_img_ifft)
+min = np.amin(filtered_img_ifft)
+
 'Normalizing image'
-filtered_img = filtered_img/(filtered_img.max()/max_value)
-max_value2 = np.amax(filtered_img)
+filtered_norm = (filtered_img_ifft-min)*max_value/(max-min)
+filtered_img = fftn(filtered_norm)
 
 'Restoring the blur using the Constrained Least Squares method'
 p = np.array([[0, -1, 0], [-1, 4, -1], [0, -1, 0]])  # laplacian operator
@@ -50,9 +54,12 @@ P = fftn(p)
 
 final_img = constrainedLeastSquare(filtered_img, f_fft, P, gamma)
 
-'Normalizing and computing the inverse Transform'
-final_img = final_img/(final_img.max()/max_value2)
+'Computing the inverse Transform and normalizing'
 final_img = np.real(fftshift(ifftn(final_img)))
+
+max = np.amax(final_img)
+min = np.amin(final_img)
+final_img = (final_img-min)*max_value/(max-min)
 
 'Standard Deviation'
 print(np.round(np.std(final_img[:]), 1))
