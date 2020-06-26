@@ -6,7 +6,8 @@ from skimage.morphology import disk
 
 
 def RMSE(img, original_img):
-    rmse = np.sqrt(np.mean((img - original_img) ** 2))
+    num_el = original_img.shape[0]*original_img.shape[1]
+    rmse = np.sqrt(np.sum(np.square(np.subtract(img.astype("float"), original_img.astype("float"))))/num_el)
     print("%.4f" % rmse)
 
 
@@ -35,10 +36,6 @@ if option == 1:
 if option == 3:
     img_final = RGBOpening(img, k)
 
-
-intensity = img.sum(axis=2)
-intensity_mod = img_final.sum(axis=2)
-RMSE(intensity_mod, intensity)
 RMSE(img_final, img)
 
 
